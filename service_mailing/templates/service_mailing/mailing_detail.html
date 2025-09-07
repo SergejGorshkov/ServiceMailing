@@ -1,0 +1,45 @@
+{% extends 'service_mailing/base.html' %}
+{% block title %}Детали рассылки{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card h-100 shadow-sm">  <!-- Фиксированная высота карточки -->
+
+                <div class="card-body d-flex flex-column">  <!-- flex-column для правильного расположения -->
+                    <div class="card-text mb-3">
+                        <strong>Название рассылки:</strong> {{mailing.name}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Сообщение для отправки:</strong> {{mailing.message}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Получатели сообщения:</strong> {{mailing.recipients}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Дата и время начала отправки:</strong> {{mailing.start_time|date:"d.m.Y H:i"}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Дата и время окончания отправки:</strong> {{mailing.end_time|date:"d.m.Y H:i"}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Добавлена:</strong> {{mailing.created_at|date:"d.m.Y H:i"}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Статус рассылки:</strong> {{mailing.is_active|yesno:"Активна,Неактивна"}}
+                    </div>
+
+                    <!-- Этот блок будет прижат к низу карточки -->
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'service_mailing:mailing_list' %}" class="btn btn-secondary">Назад</a>
+                            <small class="text-muted">{{mailing.updated_at|timesince}}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
