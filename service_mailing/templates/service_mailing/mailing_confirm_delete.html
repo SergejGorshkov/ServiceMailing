@@ -1,13 +1,13 @@
 {% extends "service_mailing/base.html" %}
 {% block title %}Удаление рассылки{% endblock %}
-
+{% block page_title %}Удаление рассылки{% endblock %}
 {% block content %}
 <div class="container">
     <div class="row">
         <div class="col-6">
             <form class="row" method="post" enctype="multipart/form-data">
                 <div class="card">
-                    <p class="card-text">Вы действительно хотите удалить рассылку "{{mailing.name|truncatechars:50}}"?</p>
+                    <p class="card-text">Вы действительно хотите удалить рассылку "{{mailing|truncatewords:5}}"?</p>
                     <div class="card-body">
                         {% csrf_token %}
                     </div>

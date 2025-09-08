@@ -1,9 +1,11 @@
 {% extends "service_mailing/base.html" %}
 {% block title %}Список получателей{% endblock %}
 
+{% block page_title %}Список получателей{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h1>Получатели рассылки</h1>
+
 
     <a href="{% url 'service_mailing:recipient_create' %}" class="btn btn-primary mb-3">
         + Добавить получателя

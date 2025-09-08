@@ -142,6 +142,9 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Адрес электронн�
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Пароль от сервиса яндекса для отправки почты
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # По умолчанию отправляем письма с этого адреса
 
+# Для тестирования (использует консоль вместо реальной отправки)
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # Кэширование в Redis (для ускорения работы приложения). Установка: poetry add redis
 CACHE_ENABLED = True  # Включаем кэширование в приложении (можно вынести в .env)
 if CACHE_ENABLED:

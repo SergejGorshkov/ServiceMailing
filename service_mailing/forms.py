@@ -71,9 +71,6 @@ class MailingForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         """Инициализация формы"""
         super().__init__(*args, **kwargs)
-        # # Фильтрация активных сообщений и получателей
-        # self.fields['message'].queryset = Message.objects.filter(is_active=True)
-        # self.fields['recipients'].queryset = Recipient.objects.filter(is_active=True)
 
     class Meta:
         """Мета-класс для настройки полей формы"""
@@ -107,13 +104,11 @@ class MailingForm(forms.ModelForm):
             'name': 'Название рассылки',
             'message': 'Сообщение',
             'recipients': 'Получатели',
-            'start_time': 'Время начала',
-            'end_time': 'Время окончания',
+            'start_time': 'Время начала отправки',
+            'end_time': 'Время окончания отправки',
             'is_active': 'Активна'
         }
         help_texts = {
-            'start_time': 'Когда начать отправку рассылки',
-            'end_time': 'Когда завершить отправку рассылки',
             'recipients': 'Выберите получателей (удерживайте Ctrl для множественного выбора)'
         }
 

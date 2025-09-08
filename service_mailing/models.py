@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils import timezone
-from django.urls import reverse
 
 
 class Recipient(models.Model):
@@ -46,10 +45,6 @@ class Recipient(models.Model):
         """Строковое представление модели."""
         return f"{self.full_name} ({self.email})"
 
-    def get_absolute_url(self):
-        """Получение абсолютного URL модели для обеспечения единой ссылки при работе с объектом "Получатель"."""
-        return reverse('service_mailing:recipient_detail', kwargs={'pk': self.pk})
-
 
 class Message(models.Model):
     """Модель сообщения для рассылки"""
@@ -81,10 +76,6 @@ class Message(models.Model):
         """Строковое представление модели."""
         return self.title
 
-    def get_absolute_url(self):
-        """Получение абсолютного URL модели для обеспечения единой ссылки при работе с объектом "Сообщение"."""
-        return reverse('service_mailing:message_detail', kwargs={'pk': self.pk})
-
 
 class Mailing(models.Model):
     """Модель рассылки"""
@@ -100,17 +91,14 @@ class Mailing(models.Model):
         max_length=200,
         blank=True,
         null=True,
-        help_text='Произвольное название рассылки для ее идентификации'
     )
 
     start_time = models.DateTimeField(
         verbose_name='Дата и время начала отправки',
-        help_text='Когда начать отправку рассылки'
     )
 
     end_time = models.DateTimeField(
         verbose_name='Дата и время окончания отправки',
-        help_text='Когда завершить отправку рассылки'
     )
 
     status = models.CharField(
@@ -126,7 +114,6 @@ class Mailing(models.Model):
         verbose_name='Сообщение',
         on_delete=models.CASCADE,  # Удаление сообщения при удалении рассылки
         related_name='mailings',  # переменная для обратной связи в модели Message
-        help_text='Сообщение для отправки'
     )
 
     recipients = models.ManyToManyField(
@@ -149,7 +136,7 @@ class Mailing(models.Model):
     is_active = models.BooleanField(
         verbose_name='Активна|Неактивна',
         default=True,
-        help_text='Включена ли рассылка'
+        help_text='(включена ли рассылка)'
     )
 
     class Meta:
@@ -159,19 +146,12 @@ class Mailing(models.Model):
         verbose_name = 'Рассылка'
         verbose_name_plural = 'Рассылки'
         ordering = ['-created_at']
-        # indexes = [ # Индексы для ускорения поиска по полям
-        #     models.Index(fields=['status']),
-        #     models.Index(fields=['start_time', 'end_time']),
-        # ]
 
     def __str__(self):
         """Строковое представление модели.
         Возвращает название рассылки или ее порядковый номер, если не задано ее название."""
-        return self.name or f"Рассылка № {self.id}"
+        return self.name or f"№{self.pk}"
 
-    def get_absolute_url(self):
-        """Получение абсолютного URL модели для обеспечения единой ссылки при работе с объектом "Рассылка"."""
-        return reverse('service_mailing:mailing_detail', kwargs={'pk': self.pk})
 
     def save(self, *args, **kwargs):
         """Автоматическое обновление статуса рассылки при сохранении"""
@@ -180,19 +160,7 @@ class Mailing(models.Model):
         elif self.status == 'created' and self.start_time and timezone.now() >= self.start_time:
             self.status = 'started'
 
-        # # Генерация названия если не указано
-        # if not self.name:
-        #     self.name = f"Рассылка {self.message.subject if self.message else ''} - {self.start_time.strftime('%d.%m.%Y')}"
-
         super().save(*args, **kwargs)  # Вызов базового метода save, сохранение модели в БД и обновление статуса рассылки
-
-    @property
-    def is_currently_active(self):
-        """Проверка, активна ли рассылка в данный момент"""
-        now = timezone.now()
-        return (self.is_active and
-                self.status == 'started' and
-                self.start_time <= now <= self.end_time)
 
     @property
     def recipients_count(self):
@@ -200,7 +168,7 @@ class Mailing(models.Model):
         return self.recipients.count()
 
     def get_status_class(self):
-        """CSS класс для отображения статуса. Используется в шаблоне."""
+        """CSS класс для подсветки статуса рассылки. Используется в шаблоне mailing_list.html."""
         status_classes = {
             'created': 'secondary',
             'started': 'success',
@@ -208,12 +176,73 @@ class Mailing(models.Model):
         }
         return status_classes.get(self.status, 'secondary')
 
-    def can_be_edited(self):
-        """Можно ли редактировать рассылку (можно только со статусом 'created' и 'started').
-        Используется в шаблоне и views.py."""
-        return self.status in ['created', 'started'] and self.is_active
+    # def can_be_edited(self):
+    #     """Можно ли редактировать рассылку (можно только со статусом 'created' и 'started').
+    #     Используется в шаблоне mailing_list.html и views.py."""
+    #     return self.status in ['created', 'started']
 
-    def can_be_deleted(self):
-        """Можно ли удалить рассылку (удалить можно только со статусом 'created').
-        Используется в шаблоне и views.py."""
-        return self.status == 'created'
+    def can_be_sent(self):
+        """Можно ли отправить рассылку"""
+        return (self.is_active # активна ли рассылка
+                and self.status in ['created', 'started'] # статус рассылки: создана или запущена
+                and self.message is not None # есть сообщение для рассылки
+                and self.recipients.exists() # есть хотя бы один получатель
+                )
+
+
+class MailingAttempt(models.Model):
+    """Модель попытки отправки рассылки"""
+
+    STATUS_CHOICES = [
+        ('success', 'Успешно'),
+        ('failed', 'Не успешно'),
+    ]
+
+    attempt_time = models.DateTimeField(
+        verbose_name='Дата и время попытки',
+        auto_now_add=True
+    )
+
+    status = models.CharField(
+        verbose_name='Статус попытки',
+        max_length=10,
+        choices=STATUS_CHOICES
+    )
+
+    server_response = models.TextField(
+        verbose_name='Ответ почтового сервера',
+        blank=True,
+        null=True,
+        help_text='Ответ от почтового сервера'
+    )
+
+    mailing = models.ForeignKey(
+        Mailing,
+        verbose_name='Рассылка',
+        on_delete=models.CASCADE,
+        related_name='attempts'
+    )
+
+    recipient = models.ForeignKey(
+        Recipient,
+        verbose_name='Получатель',
+        on_delete=models.CASCADE,
+        related_name='attempts',
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        """Метаданные модели.
+        Порядок сортировки, наименование модели в единственном и множественном числе, поиск по полям.
+        """
+        verbose_name = 'Попытка рассылки'
+        verbose_name_plural = 'Попытки рассылок'
+        ordering = ['-attempt_time']
+        indexes = [
+            models.Index(fields=['attempt_time']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"Попытка '{self.mailing}' - {self.attempt_time}"

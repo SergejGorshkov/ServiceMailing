@@ -1,12 +1,43 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-from .models import Recipient, Message, Mailing
+from .models import Recipient, Message, Mailing, MailingAttempt
 from .forms import RecipientForm, MessageForm, MailingForm
 
+from .services import send_mailing
+
+
+class HomeView(TemplateView):
+    """Главная страница со статистикой рассылок"""
+    template_name = 'service_mailing/home.html'
+
+    def get_context_data(self, **kwargs):
+        """Добавление статистики в контекст"""
+        context = super().get_context_data(**kwargs)
+
+        # Получение общей статистики
+        total_mailings = Mailing.objects.count() # Общее количество рассылок
+        active_mailings = Mailing.objects.filter(status='started').count() # Активные (запущенные) рассылки
+        unique_recipients = Recipient.objects.count() # Уникальные получатели (по email)
+
+        # Получение дополнительной статистики по статусам рассылок
+        completed_mailings = Mailing.objects.filter(status='completed').count() # Завершенные рассылки
+        created_mailings = Mailing.objects.filter(status='created').count() # Созданные рассылки
+
+        context.update({
+            'total_mailings': total_mailings,
+            'active_mailings': active_mailings,
+            'unique_recipients': unique_recipients,
+            'completed_mailings': completed_mailings,
+            'created_mailings': created_mailings,
+        })
+
+        return context
+
+##############################################################################
 
 # Представления для управления получателями
 class RecipientListView(LoginRequiredMixin, ListView):
@@ -185,10 +216,9 @@ class MailingListView(LoginRequiredMixin, ListView):
         return queryset.order_by('-created_at') # Сортировка рассылок по дате создания (новые сверху)
 
     def get_context_data(self, **kwargs):
-        """ Добавление данных в контекст для фильтрации и поиска в шаблоне """
+        """ Добавление данных в контекст для фильтрации в шаблоне """
         context = super().get_context_data(**kwargs)
         context['status_filter'] = self.request.GET.get('status', '') # Получение статуса рассылки из GET-запроса для фильтрации в шаблоне mailing_list.html
-        context['search_query'] = self.request.GET.get('search', '') # Получение поискового запроса из GET-запроса для поиска в шаблоне mailing_list.html
         return context
 
 
@@ -200,7 +230,29 @@ class MailingDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         """Предварительная загрузка всех получателей и сообщений из БД"""
-        return Mailing.objects.prefetch_related('recipients', 'message')
+        return Mailing.objects.prefetch_related(
+            'recipients',  # Загрузка всех получателей
+            'message',  # Загрузка сообщения
+            'attempts',  # Загрузка всех попыток отправки
+            'attempts__recipient'  # Загрузка получателя для каждой попытки
+        )
+
+    def get_context_data(self, **kwargs):
+        """Добавление данных в контекст для отображения статистики в шаблоне mailing_detail.html"""
+        context = super().get_context_data(**kwargs)
+        mailing = self.object # Получение текущей рассылки из контекста
+
+        total_attempts = MailingAttempt.objects.filter(mailing=mailing).count() # Общее количество попыток отправки
+        success_attempts = MailingAttempt.objects.filter(mailing=mailing, status='success').count() # Успешные попытки
+        failed_attempts = MailingAttempt.objects.filter(mailing=mailing, status='failed').count() # Неуспешные попытки
+
+        context.update({
+            'total_attempts': total_attempts,
+            'success_attempts': success_attempts,
+            'failed_attempts': failed_attempts
+        })
+
+        return context
 
 
 class MailingCreateView(LoginRequiredMixin, CreateView):
@@ -258,15 +310,6 @@ class MailingDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('service_mailing:mailing_list')
     context_object_name = 'mailing'
 
-    def delete(self, request, *args, **kwargs):
-        """Удаление только если рассылка еще не запущена"""
-        mailing = self.get_object() # Получение рассылки для проверки статуса и удаления
-        if not mailing.can_be_deleted():
-            messages.error(request, 'Нельзя удалить рассылку со статусом "Запущена" или "Завершена".')
-            return redirect('service_mailing:mailing_detail', pk=mailing.pk)
-
-        messages.success(request, 'Рассылка успешно удалена!')
-        return super().delete(request, *args, **kwargs)
 
 # Дополнительные функции
 def toggle_mailing_status(request, pk):
@@ -281,14 +324,24 @@ def toggle_mailing_status(request, pk):
 
 
 def start_mailing_manually(request, pk):
-    """Ручной запуск рассылки"""
+    """Ручной запуск рассылки через интерфейс страницы 'Рассылки' """
     mailing = get_object_or_404(Mailing, pk=pk)
 
-    if mailing.status == 'created':
-        mailing.status = 'started'
-        mailing.save()
-        messages.success(request, 'Рассылка запущена вручную!')
-    else:
-        messages.warning(request, 'Можно запускать только рассылки со статусом "Создана"')
+    # Смена статуса и сохранение его в БД
+    mailing.status = 'started'
+    mailing.save()
 
-    return redirect('service_mailing:mailing_detail', pk=mailing.pk)
+    # Отправка рассылки
+    success, result_message = send_mailing(mailing) # Отправка рассылки (вызов функции из services.py)
+
+    if success:
+        messages.success(request, f'Рассылка запущена! {result_message}')
+        mailing.status = 'completed' # Смена статуса рассылки на 'Завершена' после успешной отправки
+        mailing.save()
+    else:
+        messages.error(request, f'Ошибка отправки. {result_message}')
+        mailing.status = 'created' # Возврат статуса рассылки в исходное значение
+        mailing.save()
+
+    return redirect('service_mailing:mailing_list')
+

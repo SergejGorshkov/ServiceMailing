@@ -2,6 +2,7 @@ from django.urls import path
 
 from service_mailing.apps import ServiceMailingConfig
 from service_mailing.views import (
+    HomeView,
     RecipientListView,
     RecipientCreateView,
     RecipientDetailView,
@@ -21,7 +22,6 @@ from service_mailing.views import (
     toggle_mailing_status,
     start_mailing_manually,
 
-
 )
 
 # from django.views.decorators.cache import cache_page
@@ -30,6 +30,8 @@ from service_mailing.views import (
 app_name = ServiceMailingConfig.name  # Извлечение имени приложения из модуля service_mailing/apps.py
 
 urlpatterns = [
+    # Главная страница
+    path('', HomeView.as_view(), name='home'),
     # CRUD маршруты для получателей
     path('recipient/', RecipientListView.as_view(), name='recipient_list'),
     path('recipient/create/', RecipientCreateView.as_view(), name='recipient_create'),
@@ -55,7 +57,7 @@ urlpatterns = [
 
     # Дополнительные операции
     path('mailing/<int:pk>/toggle-status/', toggle_mailing_status, name='mailing_toggle_status'),
-    path('mailing/<int:pk>/start/', start_mailing_manually, name='mailing_start_manual'),
+    path('mailing/<int:pk>/start/', start_mailing_manually, name='start_mailing_manually'),
 
     # path("catalog/<int:pk>/", cache_page(60)(ProductDetailView.as_view()), name="product_detail"),  # Маршрут для страницы 'Товар'
 

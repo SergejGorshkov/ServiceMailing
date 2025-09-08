@@ -1,9 +1,10 @@
 {% extends "service_mailing/base.html" %}
 {% block title %}Список сообщений{% endblock %}
 
+{% block page_title %}Список сообщений{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h1>Сообщения</h1>
 
     <a href="{% url 'service_mailing:message_create' %}" class="btn btn-primary mb-3">
         + Добавить сообщение

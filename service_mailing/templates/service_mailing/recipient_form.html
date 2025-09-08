@@ -1,16 +1,15 @@
 {% extends "service_mailing/base.html" %}
+
 {% block title %}
+{% if form.instance.pk %}Редактирование получателя{% else %}Создание получателя{% endif %}
+{% endblock %}
+
+{% block page_title %}
 {% if form.instance.pk %}Редактирование получателя{% else %}Создание получателя{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>{% if form.instance.pk %}
-        Редактирование получателя
-        {% else %}
-        Создание получателя
-        {% endif %}
-    </h1>
 
     <form method="post">
         {% csrf_token %}

@@ -56,7 +56,7 @@
     <!-- Навигационная панель -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'service_mailing:recipient_list' %}">
+            <a class="navbar-brand" href="#">
                 <i class="bi bi-envelope-paper"></i> MailMaster
             </a>
 
@@ -67,8 +67,8 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'service_mailing:recipient_list' %}">
-                            <i class="bi bi-speedometer2"></i> Дашборд
+                        <a class="nav-link" href="{% url 'service_mailing:home' %}">
+                            <i class="bi bi-speedometer2"></i> Главная
                         </a>
                     </li>
                 </ul>
@@ -113,12 +113,6 @@
             <div class="col-md-3 col-lg-2 sidebar d-md-block collapse">
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
-                        <!--<li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-                               href="#">
-                                <i class="bi bi-speedometer2"></i> Дашборд
-                            </a>
-                        </li> -->
                         <li class="nav-item">
                             <a class="nav-link {% if 'mailing' in request.resolver_match.url_name %}active{% endif %}"
                                href="{% url 'service_mailing:mailing_list' %}">
@@ -150,34 +144,18 @@
 <!--                        </li>-->
                     </ul>
 
-                    <!-- Статистика -->
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h6><i class="bi bi-graph-up"></i> Быстрая статистика</h6>
-                        <div class="small">
-                            <div>Активных рассылок: <span class="badge bg-success">12</span></div>
-                            <div>Всего получателей: <span class="badge bg-info">154</span></div>
-                            <div>Отправлено сегодня: <span class="badge bg-primary">23</span></div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <!-- Основной контент -->
             <main class="col-md-9 col-lg-10 px-md-4 py-4">
-                <!-- Хлебные крошки -->
-                <nav aria-label="breadcrumb" class="mb-4">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="#">Главная</a></li>
-                        {% block breadcrumbs %}{% endblock %}
-                    </ol>
-                </nav>
 
                 <!-- Заголовок и кнопки действий -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 class="h2">{% block page_title %}Управление рассылками{% endblock %}</h1>
                     <div>
                         {% block action_buttons %}
-                        <a href="#" class="btn btn-primary">
+                        <a href="{% url 'service_mailing:mailing_create' %}" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> Новая рассылка
                         </a>
                         {% endblock %}
