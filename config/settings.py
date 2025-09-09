@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'service_mailing',
-
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -127,10 +127,10 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField' # По умолчанию используется BigAutoField для первичных ключей
 
 # Авторизация в приложении users (для использования собственного класса пользователя)
-# AUTH_USER_MODEL = 'users.User'  # Используем свой пользовательский класс для аутентификации
-# LOGIN_REDIRECT_URL = 'catalog:product_list'  # После успешной авторизации перенаправляем на главную страницу каталога
-# LOGOUT_REDIRECT_URL = 'catalog:product_list'  # После выхода из аккаунта перенаправляем на главную страницу каталога
-# LOGIN_URL = 'users:login'  # Путь к странице логина для перенаправления неавторизованных пользователей при попытке перехода на защищенные страницы
+AUTH_USER_MODEL = 'users.User'  # Для аутентификации используется собственный класс User
+LOGIN_REDIRECT_URL = 'service_mailing:home'  # После успешной авторизации перенаправление на главную страницу
+LOGOUT_REDIRECT_URL = 'service_mailing:home'  # После выхода из аккаунта перенаправление на главную страницу
+LOGIN_URL = 'users:login'  # Путь к странице логина для перенаправления неавторизованных пользователей при попытке перехода на защищенные страницы
 
 # Настройка отправки почты через сервер Яндекса
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
