@@ -34,7 +34,8 @@ class User(AbstractUser):
         null=True,
         verbose_name='Страна',
         help_text='Введите страну')
-    token = models.CharField(   # Поле для хранения токена временного доступа (для регистрации пользователя)
+    # Поле для хранения токена временного доступа (для регистрации пользователя)
+    token = models.CharField(
         max_length=32,
         blank=True,
         null=True,

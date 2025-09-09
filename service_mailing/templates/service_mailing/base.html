@@ -74,10 +74,10 @@
                 </ul>
 
                 <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
+                    {% if user.is_authenticated %} <!-- Если пользователь авторизован, доступны кнопки Профиль и Выход -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ user.username }}
+                            <i class="bi bi-person-circle"></i> {{ user.username|default:'Гость' }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#">
@@ -85,19 +85,24 @@
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="post" action="#" class="d-inline">
+                                <form method="post" action="{% url 'users:logout' %}" class="d-inline">
                                     {% csrf_token %}
                                     <button type="submit" class="dropdown-item">
-                                        <i class="bi bi-box-arrow-right"></i> Выйти
+                                        <i class="bi bi-box-arrow-right"></i> Выход
                                     </button>
                                 </form>
                             </li>
                         </ul>
                     </li>
-                    {% else %}
+                    {% else %} <!-- Если пользователь не авторизован, доступна кнопка Вход и Регистрация -->
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-box-arrow-in-right"></i> Войти
+                        <a class="nav-link" href="{% url 'users:login' %}">
+                            <i class="bi bi-box-arrow-in-right"></i> Вход
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:register' %}">
+                            <i class="bi bi-box-arrow-in-right"></i> Регистрация
                         </a>
                     </li>
                     {% endif %}
