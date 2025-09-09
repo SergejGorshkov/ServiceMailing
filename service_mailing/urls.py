@@ -19,6 +19,7 @@ from service_mailing.views import (
     MailingCreateView,
     MailingUpdateView,
     MailingDeleteView,
+    MailingAttemptListView,
     toggle_mailing_status,
     start_mailing_manually,
 
@@ -54,6 +55,9 @@ urlpatterns = [
     path('mailing/<int:pk>/', MailingDetailView.as_view(), name='mailing_detail'),
     path('mailing/<int:pk>/edit/', MailingUpdateView.as_view(), name='mailing_update'),
     path('mailing/<int:pk>/delete/', MailingDeleteView.as_view(), name='mailing_delete'),
+
+    # Маршрут для просмотра попыток отправки писем
+    path('attempts/', MailingAttemptListView.as_view(), name='mailing_attempt_list'),
 
     # Дополнительные операции
     path('mailing/<int:pk>/toggle-status/', toggle_mailing_status, name='mailing_toggle_status'),

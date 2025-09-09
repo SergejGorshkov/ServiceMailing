@@ -3,10 +3,8 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
 from .models import Recipient, Message, Mailing, MailingAttempt
 from .forms import RecipientForm, MessageForm, MailingForm
-
 from .services import send_mailing
 
 
@@ -200,23 +198,15 @@ class MailingListView(LoginRequiredMixin, ListView):
         # Загрузка всех получателей и сообщений заранее, а не по одному запросу на каждую рассылку
         queryset = Mailing.objects.all().prefetch_related('recipients', 'message')
 
-        # Фильтрация по статусу
+        # Фильтрация по статусу (для выпадающего списка в шаблоне)
         status = self.request.GET.get('status')
         if status in ['created', 'started', 'completed']:
             queryset = queryset.filter(status=status)
 
-        # Поиск по имени получателя или теме сообщения
-        search = self.request.GET.get('search')
-        if search:
-            queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(message__subject__icontains=search)
-            )
-
         return queryset.order_by('-created_at') # Сортировка рассылок по дате создания (новые сверху)
 
     def get_context_data(self, **kwargs):
-        """ Добавление данных в контекст для фильтрации в шаблоне """
+        """ Добавление данных в контекст для фильтрации по статусу в шаблоне mailing_list.html"""
         context = super().get_context_data(**kwargs)
         context['status_filter'] = self.request.GET.get('status', '') # Получение статуса рассылки из GET-запроса для фильтрации в шаблоне mailing_list.html
         return context
@@ -309,6 +299,62 @@ class MailingDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'service_mailing/mailing_confirm_delete.html'
     success_url = reverse_lazy('service_mailing:mailing_list')
     context_object_name = 'mailing'
+
+
+##############################################################################
+
+class MailingAttemptListView(LoginRequiredMixin, ListView):
+    """Список всех попыток рассылок со статистикой"""
+    model = MailingAttempt
+    template_name = 'service_mailing/mailing_attempt_list.html'
+    context_object_name = 'attempts'
+    paginate_by = 10
+
+    def get_queryset(self):
+        """Получение queryset с оптимизацией запросов и фильтрацией"""
+        queryset = MailingAttempt.objects.select_related(
+            'mailing',
+            'recipient'
+        ).order_by('-attempt_time')
+
+        # Фильтрация по статусу
+        status = self.request.GET.get('status')
+        if status in ['success', 'failed']:
+            queryset = queryset.filter(status=status)
+
+        return queryset
+
+
+    def get_context_data(self, **kwargs):
+        """Добавление дополнительного контекста"""
+        context = super().get_context_data(**kwargs)
+
+        # Статистика
+        total_attempts = MailingAttempt.objects.count()
+        success_attempts = MailingAttempt.objects.filter(status='success').count()
+        failed_attempts = MailingAttempt.objects.filter(status='failed').count()
+
+        # Процент успешных отправок
+        success_rate = round(success_attempts / total_attempts * 100) if total_attempts > 0 else 0
+
+        # Список рассылок для фильтра
+        mailings = Mailing.objects.all()
+
+        # Добавление статистики в контекст для шаблона mailing_attempt_list.html
+        context.update({
+            'total_attempts': total_attempts, # Общее количество попыток
+            'success_attempts': success_attempts, # Успешные попытки
+            'failed_attempts': failed_attempts, # Неуспешные попытки
+            'success_rate': success_rate, # Процент успешных отправок
+            'mailings': mailings, # Список рассылок для фильтра
+
+
+            'status_filter': self.request.GET.get('status', ''), # Фильтр по статусу
+            'mailing_filter': self.request.GET.get('mailing', ''), # Фильтр по ID рассылки
+            'search_query': self.request.GET.get('search', ''), # Поиск по получателям
+        })
+
+        return context
 
 
 # Дополнительные функции

@@ -119,29 +119,35 @@
                                 <i class="bi bi-envelope"></i> Рассылки
                             </a>
                         </li>
+
                         <li class="nav-item">
                             <a class="nav-link {% if 'recipient' in request.resolver_match.url_name %}active{% endif %}"
                                href="{% url 'service_mailing:recipient_list' %}">
                                 <i class="bi bi-people"></i> Получатели
                             </a>
                         </li>
+
                         <li class="nav-item">
                             <a class="nav-link {% if 'message' in request.resolver_match.url_name %}active{% endif %}"
                                href="{% url 'service_mailing:message_list' %}">
                                 <i class="bi bi-chat-text"></i> Шаблоны сообщений
                             </a>
                         </li>
-<!--                        <li class="nav-item">-->
-<!--                            <a class="nav-link {% if 'log' in request.resolver_match.url_name %}active{% endif %}"-->
-<!--                               href="#">-->
-<!--                                <i class="bi bi-clock-history"></i> Логи рассылок-->
-<!--                            </a>-->
-<!--                        </li>-->
-<!--                        <li class="nav-item">-->
-<!--                            <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">-->
-<!--                                <i class="bi bi-gear"></i> Административная панель-->
-<!--                            </a>-->
-<!--                        </li>-->
+
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'attempts' in request.resolver_match.url_name %}active{% endif %}"
+                               href="{% url 'service_mailing:mailing_attempt_list' %}">
+                                <i class="bi bi-chat-text"></i> Статистика по рассылкам
+                            </a>
+                        </li>
+
+                        {% if user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
+                                <i class="bi bi-gear"></i> Административная панель
+                            </a>
+                        </li>
+                        {% endif %}
                     </ul>
 
                 </div>
