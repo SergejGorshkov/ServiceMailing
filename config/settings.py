@@ -124,13 +124,14 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField' # По умолчанию используется BigAutoField для первичных ключей
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'  # По умолчанию используется BigAutoField для первичных ключей
 
 # Авторизация в приложении users (для использования собственного класса пользователя)
 AUTH_USER_MODEL = 'users.User'  # Для аутентификации используется собственный класс User
 LOGIN_REDIRECT_URL = 'service_mailing:home'  # После успешной авторизации перенаправление на главную страницу
 LOGOUT_REDIRECT_URL = 'service_mailing:home'  # После выхода из аккаунта перенаправление на главную страницу
-LOGIN_URL = 'users:login'  # Путь к странице логина для перенаправления неавторизованных пользователей при попытке перехода на защищенные страницы
+LOGIN_URL = 'users:login'  # Путь к странице логина для перенаправления неавторизованных пользователей при попытке
+# перехода на защищенные страницы
 
 # Настройка отправки почты через сервер Яндекса
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -151,6 +152,6 @@ if CACHE_ENABLED:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': 'redis://127.0.0.1:6379/1', # или 'redis://localhost:6379/1'
+            'LOCATION': 'redis://127.0.0.1:6379/1',  # или 'redis://localhost:6379/1'
         }
     }

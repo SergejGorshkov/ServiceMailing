@@ -25,36 +25,32 @@ def send_mailing(mailing):
     if not mailing.can_be_sent():
         return False, "Возможная причина: не активна, имеет статус 'Завершена', не добавлено сообщение или получатели."
 
-    successful_sends = 0 # Счетчик успешных отправок
-    total_recipients = mailing.recipients.count() # Количество получателей
-    recipients = mailing.recipients.all() # Получение всех получателей
+    successful_sends = 0  # Счетчик успешных отправок
+    total_recipients = mailing.recipients.count()  # Количество получателей
+    recipients = mailing.recipients.all()  # Получение всех получателей
 
-    for recipient in recipients: # Перебор всех получателей и отправка им писем
+    for recipient in recipients:  # Перебор всех получателей и отправка им писем
         # Вызов функции отправки письма и сохранение результата в переменные success и error_message
-        success, error_message = send_mailing_email(
-            recipient.email,
-            mailing.message.title,
-            mailing.message.content
-        )
-        if success: # Если отправка успешна, то увеличивается счетчик успешных отправок
+        success, error_message = send_mailing_email(recipient.email, mailing.message.title, mailing.message.content)
+        if success:  # Если отправка успешна, то увеличивается счетчик успешных отправок
             successful_sends += 1
 
             # Сохранение результата отправки в таблицу MailingAttempt для каждого отправленного письма
             MailingAttempt.objects.create(
-            mailing=mailing,
-            recipient=recipient,
-            status='success',
-            server_response='Письмо успешно отправлено',
-            attempt_time=timezone.now(),
+                mailing=mailing,
+                recipient=recipient,
+                status="success",
+                server_response="Письмо успешно отправлено",
+                attempt_time=timezone.now(),
             )
 
-        if not success: # Если отправка не успешна, то сохранение ошибки в таблицу MailingAttempt
+        if not success:  # Если отправка не успешна, то сохранение ошибки в таблицу MailingAttempt
             MailingAttempt.objects.create(
-            mailing=mailing,
-            recipient=recipient,
-            status='failed',
-            server_response=error_message,
-            attempt_time=timezone.now(),
+                mailing=mailing,
+                recipient=recipient,
+                status="failed",
+                server_response=error_message,
+                attempt_time=timezone.now(),
             )
 
     return True, f"Отправлено {successful_sends} из {total_recipients} писем"

@@ -10,6 +10,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         """Мета-класс для настройки формы"""
+
         model = User
         fields = ["username", "email", "phone", "avatar", "country", "password1", "password2"]
         widgets = {
@@ -31,20 +32,21 @@ class CustomUserCreationForm(UserCreationForm):
             {
                 "class": "form-control",
                 "accept": "image/jpeg, image/png, .jpg, .jpeg, .png",  # только изображения в формате jpeg, png
-                "placeholder": "Загрузите изображение в формате jpeg, png, jpg"
+                "placeholder": "Загрузите изображение в формате jpeg, png, jpg",
             }
         )
         self.fields["country"].widget.attrs.update({"class": "form-control", "placeholder": "Введите страну"})
         self.fields["password1"].widget.attrs.update({"class": "form-control", "placeholder": "Введите пароль"})
         self.fields["password2"].widget.attrs.update(
-            {"class": "form-control", "placeholder": "Введите пароль повторно"})
+            {"class": "form-control", "placeholder": "Введите пароль повторно"}
+        )
 
         # Делаем email readonly, так как он используется для входа
-        self.fields['email'].widget.attrs['readonly'] = True
+        self.fields["email"].widget.attrs["readonly"] = True
 
     def clean_email(self):
         """Валидация email на уникальность"""
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get("email")
 
         if not email:
             raise ValidationError("Email обязателен для заполнения")
@@ -85,39 +87,27 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         """Мета-класс для настройки формы"""
+
         model = User
-        fields = ['username', 'email', 'phone', 'avatar', 'country']
+        fields = ["username", "email", "phone", "avatar", "country"]
         widgets = {
-            'username': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Введите имя пользователя'
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Введите email'
-            }),
-            'phone': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '+79999999999'
-            }),
-            'country': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Введите страну'
-            }),
-            'avatar': forms.ClearableFileInput(attrs={
-                'class': 'form-control',
-                'accept': 'image/jpeg, image/png, .jpg, .jpeg, .png'
-            })
+            "username": forms.TextInput(attrs={"class": "form-control", "placeholder": "Введите имя пользователя"}),
+            "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "Введите email"}),
+            "phone": forms.TextInput(attrs={"class": "form-control", "placeholder": "+79999999999"}),
+            "country": forms.TextInput(attrs={"class": "form-control", "placeholder": "Введите страну"}),
+            "avatar": forms.ClearableFileInput(
+                attrs={"class": "form-control", "accept": "image/jpeg, image/png, .jpg, .jpeg, .png"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Делаем email readonly, так как он используется для входа
-        self.fields['email'].widget.attrs['readonly'] = True
+        self.fields["email"].widget.attrs["readonly"] = True
 
     def clean_avatar(self):
         """Валидация аватара"""
-        avatar = self.cleaned_data.get('avatar')
+        avatar = self.cleaned_data.get("avatar")
 
         if not avatar:
             return None
@@ -125,17 +115,13 @@ class UserProfileForm(forms.ModelForm):
         # Проверка размера файла (максимум 5 МБ)
         max_size = 5 * 1024 * 1024
         if avatar.size > max_size:
-            raise forms.ValidationError(
-                f"Размер файла слишком большой. Максимальный размер: 5 МБ"
-            )
+            raise forms.ValidationError("Размер файла слишком большой. Максимальный размер: 5 МБ")
 
         # Проверка формата файла
-        valid_extensions = ['jpg', 'jpeg', 'png']
-        extension = avatar.name.split('.')[-1].lower()
+        valid_extensions = ["jpg", "jpeg", "png"]
+        extension = avatar.name.split(".")[-1].lower()
 
         if extension not in valid_extensions:
-            raise forms.ValidationError(
-                f"Неподдерживаемый формат файла. Разрешены: {', '.join(valid_extensions)}"
-            )
+            raise forms.ValidationError(f"Неподдерживаемый формат файла. Разрешены: {', '.join(valid_extensions)}")
 
         return avatar

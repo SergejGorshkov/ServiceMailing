@@ -40,6 +40,7 @@ class Command(BaseCommand):
         else:
             self.stdout.write(
                 self.style.WARNING(
-                    "Для отправки конкретной рассылки укажите ее ID (напр., python manage.py send_mailing --mailing-id 1)"
+                    "Для отправки конкретной рассылки укажите ее ID "
+                    "(напр., python manage.py send_mailing --mailing-id 1)"
                 )
             )
