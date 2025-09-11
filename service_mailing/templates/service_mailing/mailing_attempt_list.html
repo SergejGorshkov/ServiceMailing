@@ -96,15 +96,17 @@
 
                         <td> <!-- Действия -->
                             <div class="btn-group btn-group-sm">
-                                <a href="{% url 'service_mailing:mailing_detail' attempt.mailing.pk %}"
-                                   class="btn btn-primary" title="К рассылке">
-                                    <i class="bi bi-envelope"></i>
-                                </a>
+                                {% if attempt.mailing.owner == user or perms.service_mailing.can_view_all_mailings %}
+                                    <a href="{% url 'service_mailing:mailing_detail' attempt.mailing.pk %}"
+                                       class="btn btn-primary" title="К рассылке">
+                                    </a>
+                                {% endif %}
                                 {% if attempt.recipient %}
-                                <a href="{% url 'service_mailing:recipient_detail' attempt.recipient.pk %}"
-                                   class="btn btn-outline-secondary" title="К получателю">
-                                    <i class="bi bi-person"></i>
-                                </a>
+                                    {% if attempt.recipient.owner == user or perms.service_mailing.can_view_all_recipients %}
+                                        <a href="{% url 'service_mailing:recipient_detail' attempt.recipient.pk %}"
+                                           class="btn btn-outline-secondary" title="К получателю">
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </td>

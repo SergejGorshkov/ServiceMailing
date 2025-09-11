@@ -40,9 +40,11 @@
 
     <div class="row">
         <div class="col-12 text-center">
+            {% if user.is_authenticated %}
             <a href="{% url 'service_mailing:mailing_list' %}" class="btn btn-primary btn-lg">
                 Перейти к рассылкам
             </a>
+            {% endif %}
         </div>
     </div>
 </div>

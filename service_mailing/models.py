@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 
+from config import settings
+
 
 class Recipient(models.Model):
     """Модель получателя рассылки"""
@@ -32,6 +34,14 @@ class Recipient(models.Model):
         default=True,
         help_text='(включен ли получатель в рассылки)'
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # связь с пользователем, который создал получателя (имя - из settings.py)
+        on_delete=models.CASCADE,  # если пользователь удален, то поле owner будет очищено
+        verbose_name="Владелец получателя",
+        blank=True,
+        null=True,
+        related_name="recipients",  # имя поля в модели User для связи с моделью Recipient
+    )
 
     class Meta:
         """Метаданные модели.
@@ -40,6 +50,9 @@ class Recipient(models.Model):
         verbose_name = 'Получатель'
         verbose_name_plural = 'Получатели'
         ordering = ['full_name', '-created_at']
+        permissions = [
+            ("can_view_all_recipients", "Может просматривать всех получателей"),
+        ]
 
     def __str__(self):
         """Строковое представление модели."""
@@ -63,6 +76,14 @@ class Message(models.Model):
         verbose_name='Дата обновления сообщения',
         auto_now=True
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # связь с пользователем, который создал получателя (имя - из settings.py)
+        on_delete=models.CASCADE,  # если пользователь удален, то поле owner будет очищено
+        verbose_name="Владелец сообщения",
+        blank=True,
+        null=True,
+        related_name="messages",  # имя поля в модели User для связи с моделью Message
+    )
 
     class Meta:
         """Метаданные модели.
@@ -71,6 +92,9 @@ class Message(models.Model):
         verbose_name = 'Сообщение'
         verbose_name_plural = 'Сообщения'
         ordering = ['-created_at']  # Сортировка по убыванию даты создания
+        permissions = [
+            ("can_view_all_messages", "Может просматривать все сообщения"),
+        ]
 
     def __str__(self):
         """Строковое представление модели."""
@@ -138,6 +162,14 @@ class Mailing(models.Model):
         default=True,
         help_text='(включена ли рассылка)'
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # связь с пользователем, который создал получателя (имя - из settings.py)
+        on_delete=models.CASCADE,  # если пользователь удален, то поле owner будет очищено
+        verbose_name="Владелец рассылки",
+        blank=True,
+        null=True,
+        related_name="mailings",  # имя поля в модели User для связи с моделью Mailing
+    )
 
     class Meta:
         """Метаданные модели.
@@ -146,6 +178,10 @@ class Mailing(models.Model):
         verbose_name = 'Рассылка'
         verbose_name_plural = 'Рассылки'
         ordering = ['-created_at']
+        permissions = [
+            ("can_view_all_mailings", "Может просматривать все рассылки"),
+            ("can_deactivate_mailing", "Может отключать рассылки"),
+        ]
 
     def __str__(self):
         """Строковое представление модели.
@@ -175,11 +211,6 @@ class Mailing(models.Model):
             'completed': 'dark'
         }
         return status_classes.get(self.status, 'secondary')
-
-    # def can_be_edited(self):
-    #     """Можно ли редактировать рассылку (можно только со статусом 'created' и 'started').
-    #     Используется в шаблоне mailing_list.html и views.py."""
-    #     return self.status in ['created', 'started']
 
     def can_be_sent(self):
         """Можно ли отправить рассылку"""

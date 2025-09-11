@@ -63,31 +63,34 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
+                                {% if mailing.owner == user or perms.service_mailing.can_view_all_mailings %}
                                 <a href="{% url 'service_mailing:mailing_detail' mailing.pk %}" 
                                    class="btn btn-info" title="Просмотр">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                
-                                {% if mailing.status != 'completed' %}
-                                <a href="{% url 'service_mailing:mailing_update' mailing.pk %}" 
-                                   class="btn btn-warning" title="Редактировать">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                {% endif %}
-
-                                <a href="{% url 'service_mailing:mailing_delete' mailing.pk %}" 
-                                   class="btn btn-danger" title="Удалить">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-
-                                {% if mailing.status != 'completed' %}
-                                <a href="{% url 'service_mailing:mailing_toggle_status' mailing.pk %}" 
-                                   class="btn btn-{% if mailing.is_active %}secondary{% else %}success{% endif %}"
-                                   title="{% if mailing.is_active %}Деактивировать{% else %}Активировать{% endif %}">
                                 </a>
                                 {% endif %}
                                 
+                                {% if mailing.status != 'completed' and mailing.owner == user %}
+                                    <a href="{% url 'service_mailing:mailing_update' mailing.pk %}"
+                                       class="btn btn-warning" title="Редактировать">
+                                    </a>
+                                {% endif %}
+
+                                {% if mailing.owner == user %}
+                                    <a href="{% url 'service_mailing:mailing_delete' mailing.pk %}"
+                                       class="btn btn-danger" title="Удалить">
+                                    </a>
+                                {% endif %}
+
                                 {% if mailing.status != 'completed' %}
+                                    {% if mailing.owner == user or perms.service_mailing.can_deactivate_mailing %}
+                                        <a href="{% url 'service_mailing:mailing_toggle_status' mailing.pk %}"
+                                           class="btn btn-{% if mailing.is_active %}secondary{% else %}success{% endif %}"
+                                           title="{% if mailing.is_active %}Деактивировать{% else %}Активировать{% endif %}">
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                                
+                                {% if mailing.status != 'completed' and mailing.owner == user %}
                                 <a href="{% url 'service_mailing:start_mailing_manually' mailing.pk %}"
                                    class="btn btn-dark" title="Запустить рассылку вручную">
                                     <i class="bi bi-send"></i>

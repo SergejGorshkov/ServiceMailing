@@ -80,7 +80,7 @@
                             <i class="bi bi-person-circle"></i> {{ user.username|default:'Гость' }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">
+                            <li><a class="dropdown-item" href="{% url 'users:profile' %}">
                                 <i class="bi bi-person"></i> Профиль
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -119,31 +119,39 @@
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
+                            {% if user.is_authenticated %}
                             <a class="nav-link {% if 'mailing' in request.resolver_match.url_name %}active{% endif %}"
                                href="{% url 'service_mailing:mailing_list' %}">
                                 <i class="bi bi-envelope"></i> Рассылки
                             </a>
+                            {% endif %}
                         </li>
 
                         <li class="nav-item">
+                            {% if user.is_authenticated %}
                             <a class="nav-link {% if 'recipient' in request.resolver_match.url_name %}active{% endif %}"
                                href="{% url 'service_mailing:recipient_list' %}">
                                 <i class="bi bi-people"></i> Получатели
                             </a>
+                            {% endif %}
                         </li>
 
                         <li class="nav-item">
+                            {% if user.is_authenticated %}
                             <a class="nav-link {% if 'message' in request.resolver_match.url_name %}active{% endif %}"
                                href="{% url 'service_mailing:message_list' %}">
                                 <i class="bi bi-chat-text"></i> Шаблоны сообщений
                             </a>
+                            {% endif %}
                         </li>
 
                         <li class="nav-item">
+                            {% if user.is_authenticated %}
                             <a class="nav-link {% if 'attempts' in request.resolver_match.url_name %}active{% endif %}"
                                href="{% url 'service_mailing:mailing_attempt_list' %}">
                                 <i class="bi bi-chat-text"></i> Статистика по рассылкам
                             </a>
+                            {% endif %}
                         </li>
 
                         {% if user.is_superuser %}
@@ -164,133 +172,24 @@
                 <!-- Заголовок и кнопки действий -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 class="h2">{% block page_title %}Управление рассылками{% endblock %}</h1>
+
                     <div>
                         {% block action_buttons %}
+                        {% if user.is_authenticated %}
                         <a href="{% url 'service_mailing:mailing_create' %}" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> Новая рассылка
                         </a>
+                        {% endif %}
                         {% endblock %}
                     </div>
+
                 </div>
 
                 <!-- Основной контент страницы -->
                 <div class="row">
                     <div class="col-12">
                         {% block content %}
-                        <div class="row">
-                            <!-- Карточки статистики -->
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div class="card stats-card border-left-primary shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                    Всего рассылок
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800">47</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="bi bi-envelope fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div class="card stats-card border-left-success shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                    Активные рассылки
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="bi bi-play-circle fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div class="card stats-card border-left-info shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                                    Уникальных получателей
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800">154</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="bi bi-people fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div class="card stats-card border-left-warning shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row no-gutters align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                    Отправлено сегодня
-                                                </div>
-                                                <div class="h5 mb-0 font-weight-bold text-gray-800">23</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="bi bi-send fa-2x text-gray-300"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Быстрые действия -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="card-title mb-0">Быстрые действия</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-3 mb-2">
-                                                <a href="#" class="btn btn-outline-primary w-100">
-                                                    <i class="bi bi-plus-circle"></i><br>
-                                                    Новая рассылка
-                                                </a>
-                                            </div>
-                                            <div class="col-md-3 mb-2">
-                                                <a href="{% url 'service_mailing:recipient_create' %}" class="btn btn-outline-success w-100">
-                                                    <i class="bi bi-person-plus"></i><br>
-                                                    Добавить получателя
-                                                </a>
-                                            </div>
-                                            <div class="col-md-3 mb-2">
-                                                <a href="#" class="btn btn-outline-info w-100">
-<!--                                                <a href="{% url 'service_mailing:message_create' %}" class="btn btn-outline-info w-100">-->
-                                                    <i class="bi bi-chat-text"></i><br>
-                                                    Создать шаблон
-                                                </a>
-                                            </div>
-<!--                                            <div class="col-md-3 mb-2">-->
-<!--                                                <a href="{% url 'service_mailing:log_list' %}" class="btn btn-outline-secondary w-100">-->
-<!--                                                    <i class="bi bi-clock-history"></i><br>-->
-<!--                                                    Посмотреть логи-->
-<!--                                                </a>-->
-<!--                                            </div>-->
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            <!-- Содержимое страницы -->
                         {% endblock %}
                     </div>
                 </div>

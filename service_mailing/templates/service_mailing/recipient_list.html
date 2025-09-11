@@ -34,12 +34,16 @@
                     </td>
                     <td>{{ recipient.created_at|date:"d.m.Y H:i" }}</td>
                     <td>
-                        <a href="{% url 'service_mailing:recipient_detail' recipient.pk %}" class="btn btn-sm btn-info">Смотреть</a>
-                        <a href="{% url 'service_mailing:recipient_update' recipient.pk %}" class="btn btn-sm btn-warning">Редактировать</a>
-                        <a href="{% url 'service_mailing:recipient_delete' recipient.pk %}" class="btn btn-sm btn-danger">Удалить</a>
-                        <a href="{% url 'service_mailing:recipient_toggle_status' recipient.pk %}" class="btn btn-sm btn-secondary">
-                            {{ recipient.is_active|yesno:"Деактивировать,Активировать" }}
-                        </a>
+                        {% if recipient.owner == user or perms.service_mailing.can_view_all_recipients %}
+                            <a href="{% url 'service_mailing:recipient_detail' recipient.pk %}" class="btn btn-sm btn-info">Смотреть</a>
+                        {% endif %}
+                        {% if recipient.owner %}
+                            <a href="{% url 'service_mailing:recipient_update' recipient.pk %}" class="btn btn-sm btn-warning">Редактировать</a>
+                            <a href="{% url 'service_mailing:recipient_delete' recipient.pk %}" class="btn btn-sm btn-danger">Удалить</a>
+                            <a href="{% url 'service_mailing:recipient_toggle_status' recipient.pk %}" class="btn btn-sm btn-secondary">
+                                {{ recipient.is_active|yesno:"Деактивировать,Активировать" }}
+                            </a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %} <!-- Если список пуст -->

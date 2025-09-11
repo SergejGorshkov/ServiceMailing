@@ -3,9 +3,12 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from .models import Recipient, Message, Mailing, MailingAttempt
 from .forms import RecipientForm, MessageForm, MailingForm
 from .services import send_mailing
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseForbidden
 
 
 class HomeView(TemplateView):
@@ -41,13 +44,20 @@ class HomeView(TemplateView):
 class RecipientListView(LoginRequiredMixin, ListView):
     """Список всех получателей"""
     model = Recipient
-    template_name = 'service_mailing/recipient_list.html'  # Шаблон для отображения списка получателей
-    context_object_name = 'recipients'  # Переменная для передачи списка получателей в шаблон
-    paginate_by = 20  # Количество записей на странице
+    template_name = 'service_mailing/recipient_list.html'
+    context_object_name = 'recipients'
 
     def get_queryset(self):
-        """Фильтрация списка получателей по ФИО"""
-        return Recipient.objects.all().order_by('full_name')
+        """Фильтрация списка получателей по правам доступа"""
+        user = self.request.user # Текущий пользователь
+
+        # Проверка для менеджеров
+        if user.has_perm("service_mailing.can_view_all_recipients"):
+            return Recipient.objects.all().order_by('full_name')
+
+        else:
+            # Владельцы могут просматривать только своих получателей
+            return Recipient.objects.filter(owner=user).order_by('full_name')
 
 
 class RecipientDetailView(LoginRequiredMixin, DetailView):
@@ -55,6 +65,18 @@ class RecipientDetailView(LoginRequiredMixin, DetailView):
     model = Recipient
     template_name = 'service_mailing/recipient_detail.html'
     context_object_name = 'recipient'
+
+    def get_queryset(self):
+        """Фильтрация по правам доступа"""
+        user = self.request.user  # Текущий пользователь
+
+        # Проверка для менеджеров
+        if user.has_perm("service_mailing.can_view_all_recipients"):
+            return Recipient.objects.all()
+
+        else:
+            # Владельцы могут просматривать только своих получателей
+            return Recipient.objects.filter(owner=user)
 
 
 class RecipientCreateView(LoginRequiredMixin, CreateView):
@@ -65,12 +87,12 @@ class RecipientCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('service_mailing:recipient_list')
 
     def form_valid(self, form):
-        """Проверка формы перед сохранением"""
-        messages.success(self.request, 'Получатель успешно создан!')
+        """Проверка формы перед сохранением и установка текущего пользователя владельцем Получателя"""
+        form.instance.owner = self.request.user
+        messages.success(self.request, 'Изменения успешно сохранены!')
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        """Вывод ошибок валидации формы"""
         messages.error(self.request, 'Пожалуйста, исправьте ошибки в форме.')
         return super().form_invalid(form)
 
@@ -80,6 +102,18 @@ class RecipientUpdateView(LoginRequiredMixin, UpdateView):
     model = Recipient
     form_class = RecipientForm
     template_name = 'service_mailing/recipient_form.html'
+
+    def get_dispatch(self, request, *args, **kwargs):
+        """ Проверка прав доступа для редактирования получателя """
+        obj = self.get_object() # Получение объекта получателя
+        user = self.request.user # Текущий пользователь
+
+        # Проверка, что пользователь не является владельцем объекта
+        if user != obj.owner:
+            return HttpResponseForbidden("У вас нет прав для редактирования этого объекта")
+        else:
+            # Вызов родительского метода UpdateView для обработки запроса
+            return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse_lazy('service_mailing:recipient_detail', kwargs={'pk': self.object.pk})
@@ -100,11 +134,23 @@ class RecipientDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'service_mailing/recipient_confirm_delete.html'
     success_url = reverse_lazy('service_mailing:recipient_list')
 
+    def get_dispatch(self, request, *args, **kwargs):
+        """ Проверка прав доступа для удаления получателя """
+        obj = self.get_object()  # Получение объекта получателя
+        user = self.request.user  # Текущий пользователь
+
+        # Проверка, что пользователь не является владельцем объекта
+        if user != obj.owner:
+            return HttpResponseForbidden("У вас нет прав для удаления этого объекта")
+        else:
+            # Вызов родительского метода DeleteView для обработки запроса
+            return super().dispatch(request, *args, **kwargs)
+
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, 'Получатель успешно удален!')
         return super().delete(request, *args, **kwargs)
 
-
+@login_required
 def toggle_recipient_status(request, pk):
     """Переключение статуса активности получателя"""
     recipient = get_object_or_404(Recipient, pk=pk)
@@ -124,12 +170,36 @@ class MessageListView(LoginRequiredMixin, ListView):
     context_object_name = 'messages'  # Переменная для передачи списка сообщений в шаблон
     paginate_by = 20  # Количество записей на странице
 
+    def get_queryset(self):
+        """Фильтрация списка сообщений по правам доступа"""
+        user = self.request.user # Текущий пользователь
+
+        # Проверка для менеджеров
+        if user.has_perm("service_mailing.can_view_all_messages"):
+            return Message.objects.all()
+
+        else:
+            # Владельцы могут просматривать только свои сообщения
+            return Message.objects.filter(owner=user)
+
 
 class MessageDetailView(LoginRequiredMixin, DetailView):
     """Подробная информация о сообщении"""
     model = Message
     template_name = 'service_mailing/message_detail.html'
     context_object_name = 'message'
+
+    def get_queryset(self):
+        """Фильтрация по правам доступа"""
+        user = self.request.user # Текущий пользователь
+
+        # Проверка для менеджеров
+        if user.has_perm("service_mailing.can_view_all_messages"):
+            return Message.objects.all()
+
+        else:
+            # Владельцы могут просматривать только свои сообщения
+            return Message.objects.filter(owner=user)
 
 
 class MessageCreateView(LoginRequiredMixin, CreateView):
@@ -140,8 +210,9 @@ class MessageCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('service_mailing:message_list')
 
     def form_valid(self, form):
-        """Проверка формы перед сохранением"""
-        messages.success(self.request, 'Сообщение успешно создано!')
+        """Проверка формы перед сохранением и установка текущего пользователя владельцем Сообщения"""
+        form.instance.owner = self.request.user
+        messages.success(self.request, 'Изменения успешно сохранены!')
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -155,6 +226,18 @@ class MessageUpdateView(LoginRequiredMixin, UpdateView):
     model = Message
     form_class = MessageForm
     template_name = 'service_mailing/message_form.html'
+
+    def get_dispatch(self, request, *args, **kwargs):
+        """ Проверка прав доступа для редактирования сообщения """
+        obj = self.get_object() # Получение объекта сообщения
+        user = self.request.user # Текущий пользователь
+
+        # Проверка, что пользователь не является владельцем объекта
+        if user != obj.owner:
+            return HttpResponseForbidden("У вас нет прав для редактирования этого объекта")
+        else:
+            # Вызов родительского метода UpdateView для обработки запроса
+            return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         """Возврат на страницу деталей сообщения после сохранения"""
@@ -178,6 +261,18 @@ class MessageDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'service_mailing/message_confirm_delete.html'
     success_url = reverse_lazy('service_mailing:message_list')
 
+    def get_dispatch(self, request, *args, **kwargs):
+        """ Проверка прав доступа для удаления сообщения """
+        obj = self.get_object() # Получение объекта сообщения
+        user = self.request.user # Текущий пользователь
+
+        # Проверка, что пользователь не является владельцем объекта
+        if user != obj.owner:
+            return HttpResponseForbidden("У вас нет прав для редактирования этого объекта")
+        else:
+            # Вызов родительского метода DeleteView для обработки запроса
+            return super().dispatch(request, *args, **kwargs)
+
     def delete(self, request, *args, **kwargs):
         """Удаление сообщения"""
         messages.success(self.request, 'Сообщение успешно удалено!')
@@ -194,9 +289,16 @@ class MailingListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        """Фильтрация списка рассылок по статусу"""
-        # Загрузка всех получателей и сообщений заранее, а не по одному запросу на каждую рассылку
-        queryset = Mailing.objects.all().prefetch_related('recipients', 'message')
+        """Фильтрация списка рассылок по правам доступа"""
+        user = self.request.user  # Текущий пользователь
+
+        # Проверка для менеджеров
+        if user.has_perm("service_mailing.can_view_all_mailings"):
+            queryset = Mailing.objects.all()
+
+        else:
+            # Владельцы могут просматривать только свои сообщения
+            queryset = Mailing.objects.filter(owner=user)
 
         # Фильтрация по статусу (для выпадающего списка в шаблоне)
         status = self.request.GET.get('status')
@@ -219,13 +321,22 @@ class MailingDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'mailing'
 
     def get_queryset(self):
-        """Предварительная загрузка всех получателей и сообщений из БД"""
-        return Mailing.objects.prefetch_related(
-            'recipients',  # Загрузка всех получателей
-            'message',  # Загрузка сообщения
-            'attempts',  # Загрузка всех попыток отправки
-            'attempts__recipient'  # Загрузка получателя для каждой попытки
+        """Фильтрация по правам доступа"""
+        user = self.request.user # Текущий пользователь
+        # Получение queryset с оптимизацией запросов
+        queryset = Mailing.objects.prefetch_related(
+            'recipients',
+            'message',
+            'attempts',
+            'attempts__recipient'
         )
+        # Проверка для менеджеров
+        if user.has_perm("service_mailing.can_view_all_mailings"):
+            return queryset
+        else:
+            # Владельцы могут просматривать только свои рассылки
+            return queryset.filter(owner=user)
+
 
     def get_context_data(self, **kwargs):
         """Добавление данных в контекст для отображения статистики в шаблоне mailing_detail.html"""
@@ -253,8 +364,9 @@ class MailingCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('service_mailing:mailing_list')
 
     def form_valid(self, form):
-        """Проверка формы перед сохранением"""
-        messages.success(self.request, 'Рассылка успешно создана!')
+        """Проверка формы перед сохранением и установка текущего пользователя владельцем Сообщения"""
+        form.instance.owner = self.request.user
+        messages.success(self.request, 'Изменения успешно сохранены!')
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -268,6 +380,18 @@ class MailingUpdateView(LoginRequiredMixin, UpdateView):
     model = Mailing
     form_class = MailingForm
     template_name = 'service_mailing/mailing_form.html'
+
+    def get_dispatch(self, request, *args, **kwargs):
+        """ Проверка прав доступа для редактирования рассылки """
+        obj = self.get_object() # Получение объекта сообщения
+        user = self.request.user # Текущий пользователь
+
+        # Проверка, что пользователь не является владельцем объекта
+        if user != obj.owner:
+            return HttpResponseForbidden("У вас нет прав для редактирования этого объекта")
+        else:
+            # Вызов родительского метода UpdateView для обработки запроса
+            return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         """Возврат на страницу деталей рассылки после сохранения"""
@@ -300,6 +424,18 @@ class MailingDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('service_mailing:mailing_list')
     context_object_name = 'mailing'
 
+    def get_dispatch(self, request, *args, **kwargs):
+        """ Проверка прав доступа для удаления рассылки """
+        obj = self.get_object() # Получение объекта сообщения
+        user = self.request.user # Текущий пользователь
+
+        # Проверка, что пользователь не является владельцем объекта
+        if user != obj.owner:
+            return HttpResponseForbidden("У вас нет прав для редактирования этого объекта")
+        else:
+            # Вызов родительского метода DeleteView для обработки запроса
+            return super().dispatch(request, *args, **kwargs)
+
 
 ##############################################################################
 
@@ -310,12 +446,22 @@ class MailingAttemptListView(LoginRequiredMixin, ListView):
     context_object_name = 'attempts'
     paginate_by = 10
 
+
     def get_queryset(self):
-        """Получение queryset с оптимизацией запросов и фильтрацией"""
+        """Получение queryset с оптимизацией запросов и фильтрацией по правам доступа"""
+        user = self.request.user # Текущий пользователь
+
+        # Базовый queryset
         queryset = MailingAttempt.objects.select_related(
-            'mailing',
-            'recipient'
+            'mailing',  # Загрузка рассылки
+            'mailing__owner',  # Загрузка владельца рассылки
+            'recipient'  # Загрузка получателя
         ).order_by('-attempt_time')
+
+        # Фильтрация по правам доступа
+        if not user.has_perm("service_mailing.can_view_all_mailings"): # Если не менеджер
+            # Пользователь может видеть только попытки своих рассылок
+            queryset = queryset.filter(mailing__owner=user)
 
         # Фильтрация по статусу
         status = self.request.GET.get('status')
@@ -328,17 +474,25 @@ class MailingAttemptListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         """Добавление дополнительного контекста"""
         context = super().get_context_data(**kwargs)
+        user = self.request.user
 
-        # Статистика
-        total_attempts = MailingAttempt.objects.count()
-        success_attempts = MailingAttempt.objects.filter(status='success').count()
-        failed_attempts = MailingAttempt.objects.filter(status='failed').count()
+        # Базовый QuerySet для статистики
+        if user.has_perm("service_mailing.can_view_all_mailings"):
+            # Менеджеры видят всю статистику
+            total_attempts = MailingAttempt.objects.count()
+            success_attempts = MailingAttempt.objects.filter(status='success').count()
+            failed_attempts = MailingAttempt.objects.filter(status='failed').count()
+            mailings = Mailing.objects.all()
+        else:
+            # Обычные пользователи видят только свою статистику
+            user_mailings = Mailing.objects.filter(owner=user)
+            total_attempts = MailingAttempt.objects.filter(mailing__in=user_mailings).count()
+            success_attempts = MailingAttempt.objects.filter(mailing__in=user_mailings, status='success').count()
+            failed_attempts = MailingAttempt.objects.filter(mailing__in=user_mailings, status='failed').count()
+            mailings = user_mailings
 
         # Процент успешных отправок
         success_rate = round(success_attempts / total_attempts * 100) if total_attempts > 0 else 0
-
-        # Список рассылок для фильтра
-        mailings = Mailing.objects.all()
 
         # Добавление статистики в контекст для шаблона mailing_attempt_list.html
         context.update({
@@ -347,8 +501,6 @@ class MailingAttemptListView(LoginRequiredMixin, ListView):
             'failed_attempts': failed_attempts, # Неуспешные попытки
             'success_rate': success_rate, # Процент успешных отправок
             'mailings': mailings, # Список рассылок для фильтра
-
-
             'status_filter': self.request.GET.get('status', ''), # Фильтр по статусу
             'mailing_filter': self.request.GET.get('mailing', ''), # Фильтр по ID рассылки
             'search_query': self.request.GET.get('search', ''), # Поиск по получателям
@@ -358,9 +510,18 @@ class MailingAttemptListView(LoginRequiredMixin, ListView):
 
 
 # Дополнительные функции
+@login_required
 def toggle_mailing_status(request, pk):
     """Переключение статуса активности рассылки"""
-    mailing = get_object_or_404(Mailing, pk=pk)
+    mailing = get_object_or_404(Mailing, pk=pk) # Получение объекта рассылки
+    # Проверка прав доступа
+    user = request.user
+    can_deactivate = user.has_perm('service_mailing.can_deactivate_mailing') # Проверка права на деактивацию рассылок
+    is_owner = hasattr(mailing, 'owner') and mailing.owner == user # Проверка владельца рассылки
+
+    if not (can_deactivate or is_owner):
+        raise PermissionDenied("У вас нет прав для изменения статуса этой рассылки")
+
     mailing.is_active = not mailing.is_active
     mailing.save()
 
@@ -368,10 +529,14 @@ def toggle_mailing_status(request, pk):
     messages.success(request, f'Рассылка {status}')
     return redirect('service_mailing:mailing_list')
 
-
+@login_required
 def start_mailing_manually(request, pk):
     """Ручной запуск рассылки через интерфейс страницы 'Рассылки' """
     mailing = get_object_or_404(Mailing, pk=pk)
+    user = request.user
+    is_owner = hasattr(mailing, 'owner') and mailing.owner == user  # Проверка владельца рассылки
+    if not is_owner:
+        raise PermissionDenied("У вас нет прав для изменения статуса этой рассылки")
 
     # Смена статуса и сохранение его в БД
     mailing.status = 'started'
@@ -390,4 +555,3 @@ def start_mailing_manually(request, pk):
         mailing.save()
 
     return redirect('service_mailing:mailing_list')
-

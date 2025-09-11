@@ -36,7 +36,7 @@ class User(AbstractUser):
         help_text='Введите страну')
     # Поле для хранения токена временного доступа (для регистрации пользователя)
     token = models.CharField(
-        max_length=32,
+        max_length=100,
         blank=True,
         null=True,
         verbose_name='Токен подтверждения'
@@ -49,6 +49,11 @@ class User(AbstractUser):
         """ Метаданные модели """
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        permissions = [
+            ("can_view_user_list", "Может просматривать список пользователей"),
+            ("can_block_user", "Может блокировать пользователей"),
+            # ("can_view_user_stats", "Может просматривать статистику пользователей"),
+        ]
 
     def __str__(self):
         return self.email

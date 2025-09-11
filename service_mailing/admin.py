@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Recipient, Message, Mailing, MailingAttempt
 
+
 @admin.register(Recipient)
 class RecipientAdmin(admin.ModelAdmin):
     """Админка для модели Recipient"""

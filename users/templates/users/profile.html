@@ -1,0 +1,52 @@
+{% extends 'service_mailing/base.html' %}
+{% block title %}Профиль пользователя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Профиль пользователя</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            {% if user.avatar %}
+                                <img src="{{ user.avatar.url }}" alt="Аватар" 
+                                     class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
+                            {% else %}
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" 
+                                     style="width: 150px; height: 150px;">
+                                    <i class="bi bi-person fs-1 text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <a href="{% url 'users:profile_edit' %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-pencil"></i> Редактировать
+                            </a>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <strong>Имя пользователя:</strong>
+                                <p class="mb-0">{{ user.username|default:"Не указано" }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Email:</strong>
+                                <p class="mb-0">{{ user.email }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Телефон:</strong>
+                                <p class="mb-0">{{ user.phone|default:"Не указан" }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Страна:</strong>
+                                <p class="mb-0">{{ user.country|default:"Не указана" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
