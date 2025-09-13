@@ -1,0 +1,25 @@
+{% extends "service_mailing/base.html" %}
+{% block title %}Удаление рассылки{% endblock %}
+{% block page_title %}Удаление рассылки{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-6">
+            <form class="row" method="post" enctype="multipart/form-data">
+                <div class="card">
+                    <p class="card-text">Вы действительно хотите удалить рассылку "{{mailing|truncatewords:5}}"?</p>
+                    <div class="card-body">
+                        {% csrf_token %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary">Удалить</button>
+                            <a class="btn btn-secondary" href="{% url 'service_mailing:mailing_list' %}" role="button">Отменить</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

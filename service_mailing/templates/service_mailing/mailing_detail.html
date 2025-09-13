@@ -1,0 +1,93 @@
+{% extends 'service_mailing/base.html' %}
+{% block title %}Детали рассылки{% endblock %}
+{% block page_title %}Детали рассылки{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card h-100 shadow-sm">  <!-- Фиксированная высота карточки -->
+
+                <div class="card-body d-flex flex-column">  <!-- flex-column для правильного расположения -->
+                    <div class="card-text mb-3">
+                        <strong>Название рассылки:</strong> {{mailing.name}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Сообщение для отправки:</strong> {{mailing.message}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Получатели сообщения:</strong>
+                        <ul class="list-group mt-2">
+                            {% for recipient in mailing.recipients.all %}
+                                <li class="list-group-item">
+                                    {{ recipient.full_name }} ({{ recipient.email }})
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-muted">Получатели не назначены</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Дата и время начала отправки:</strong> {{mailing.start_time|date:"d.m.Y H:i"}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Дата и время окончания отправки:</strong> {{mailing.end_time|date:"d.m.Y H:i"}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Добавлена:</strong> {{mailing.created_at|date:"d.m.Y H:i"}}
+                    </div>
+                    <div class="card-text mb-3">
+                        <strong>Статус рассылки:</strong> {{mailing.is_active|yesno:"Активна,Неактивна"}}
+                    </div>
+
+                    <!-- Статистика отправки -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Статистика отправки</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="card stats-card">
+                                        <div class="card-body">
+                                            <h3 class="text-primary">{{ total_attempts }}</h3>
+                                            <p class="text-muted">Всего отправок</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card stats-card">
+                                        <div class="card-body">
+                                            <h3 class="text-success">{{ success_attempts }}</h3>
+                                            <p class="text-muted">Успешных отправок</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card stats-card">
+                                        <div class="card-body">
+                                            <h3 class="text-danger">{{ failed_attempts }}</h3>
+                                            <p class="text-muted">Неуспешных отправок</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+                    <!-- Этот блок будет прижат к низу карточки -->
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'service_mailing:mailing_list' %}" class="btn btn-secondary">Назад</a>
+                            <small class="text-muted">{{mailing.updated_at|timesince}}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "service_mailing/base.html" %}
+
+{% block title %}
+{% if form.instance.pk %}Редактирование сообщения{% else %}Создание сообщения{% endif %}
+{% endblock %}
+
+{% block page_title %}
+{% if form.instance.pk %}Редактирование сообщения{% else %}Создание сообщения{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <a href="{% url 'service_mailing:message_list' %}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}
